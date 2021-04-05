@@ -1,6 +1,6 @@
 # flight_delay_predictor
 
-[Link to Data](<https://drive.google.com/file/d/1K_ch0CUsOkags5gyQjNfB14RslHcjd9L/view?usp=sharing>)
+[Link to Data](<https://drive.google.com/drive/folders/1RYEbID7LjLgQw-ikG2i801AvsaWu56qq?usp=sharing>)
 
 •Airline Delay and Cancellation Data, 2009 - 2018 | Kaggle <https://www.kaggle.com/yuanyuwendymu/airline-delay-and-cancellation-data-2009-2018>
 
