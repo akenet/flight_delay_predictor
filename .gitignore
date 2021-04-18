@@ -2,4 +2,4 @@
 .DS_Store
 .Rhistory
 .ipynb_checkpoints/Flight Delay Predictor Data Munging-checkpoint.ipynb
-Data/flights*
+Data/
