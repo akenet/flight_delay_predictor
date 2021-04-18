@@ -2,7 +2,6 @@
 .DS_Store
 .Rhistory
 .ipynb_checkpoints/Flight Delay Predictor Data Munging-checkpoint.ipynb
-Data/
 Data/flights0.csv
 Data/flights1.csv
 Data/flights10.csv
