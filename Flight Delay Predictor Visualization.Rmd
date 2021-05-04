@@ -174,10 +174,84 @@ dateInput(inputId = "date", label = "Departure Date:",
 Column {data-width=550}
 -----------------------------------------------------------------------
 
-#### Historical Delays For Your Flight
+#### testing
 ```{r}
 renderPlotly({
   
+  # Determine which date was chosen
+  date <- substr(input$date, 6, 10) # only want month and day
+  date <- as.Date(date, format = "%m-%d") # convert date from chr to date
+  whichDate <- filter(dat, DATE == date)
+
+  # Filter by airline
+  whichAirline <- filter(whichDate, AIRLINE == input$airline)
+  
+  # Determine which departure airport was chosen
+  dep <- input$departure
+  dep <- substr(dep, nchar(dep)-3, nchar(dep)-1) # get only the IATA code
+  
+  # check to make sure there is data
+  num_data1 <- sum(whichAirline$DEPARTURE == dep)
+  
+  good = 0
+  if (num_data1 > 0){ # if there is data from departure airport
+    # Filter by departure airport
+    whichDeparture <- filter(whichAirline, DEPARTURE == dep)
+    good = 1
+    
+    # Determine which arrival airport was chosen
+    arr <- input$arrival
+    arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
+    
+    # check to make sure there is data
+    num_data2 <- sum(whichDeparture$ARRIVAL == arr)
+    
+    if (num_data2 > 0){ # if there is data from arrival airport
+      # Filter by arrival airport
+      whichArrival <- filter(whichDeparture, ARRIVAL == arr)
+      good = good + 1 # good=2 if have date from both departure and arrival airport
+    }
+    
+  }
+  
+  if (good == 2) { # if have data from both departure and arrival airport
+    # final data for plotting
+    dat2plot <- whichArrival
+    
+    # set up theme
+    my_theme <- theme_classic() +
+      theme(text = element_text(size = 14),
+            plot.title = element_text(hjust = 0.5),
+            axis.title.x = element_text(margin = margin(10,0,0,0)),
+            axis.title.y = element_text(margin = margin(0,10,0,0)),
+            axis.text.x = element_text(margin = margin(5,0,0,0)),
+            axis.text.y = element_text(margin = margin(0,5,0,0)))
+    
+    # create base plot
+    myPlot <- ggplot(dat2plot, aes(y=DEP_DELAY)) +
+      geom_bar() +
+      # scale_x_date(date_breaks = "1 month",
+      #              date_labels = "%m-%d") +
+      # ylab('Delay (min)') +
+      # xlab('Departure Date') +
+      my_theme
+  } else { # if don't have data from departure/arrival/both airports
+    myPlot <- ggplot() +
+      annotate("text", x = 4, y = 25, size = 8, label='No Data Available') +
+      theme_void()
+  }
+  
+  # make interactive
+  plotly_build(myPlot)
+  
+})
+```
+
+
+
+#### Historical Delays For Your Flight
+```{r}
+renderPlotly({
   # Filter by airline
   whichAirline <- filter(dat, AIRLINE == input$airline)
   
@@ -209,10 +283,6 @@ renderPlotly({
     
   }
   
-  # # Determine which date was chosen
-  # dateFilter
-  # whichDate <- filter(whichData, Country %in% input$country)
-  
   if (good == 2) { # if have data from both departure and arrival airport
     # final data for plotting
     dat2plot <- whichArrival
@@ -231,8 +301,8 @@ renderPlotly({
       geom_point() +
       scale_x_date(date_breaks = "1 month",
                    date_labels = "%m-%d") +
-      xlab('Delay (min)') +
-      ylab('Departure Date') +
+      ylab('Delay (min)') +
+      xlab('Departure Date') +
       my_theme
   } else { # if don't have data from departure/arrival/both airports
     myPlot <- ggplot() +
