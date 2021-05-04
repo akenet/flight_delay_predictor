@@ -54,6 +54,12 @@ dat <- rbind(dat0, dat1) %>%
 
 # remove individual data files
 rm(dat0, dat1)
+
+# remove year from dates
+dat <- mutate(dat, DATE=format(as.Date(DATE), "%m-%d"))
+
+# convert date from chr to date
+dat$DATE <- as.Date(dat$DATE, format = "%m-%d")
 ```
 
 ```{r}
@@ -159,8 +165,7 @@ selectInput(inputId = "arrival", label = "Arrival Airport:",
             choices = airports,
             selected = 'Los Angeles International Airport (LAX)')
 
-# wh
-  # Determine which departure airport ich departure date
+# which departure date
 dateInput(inputId = "date", label = "Departure Date:",
           value = "2021-05-01")
 ```
@@ -183,34 +188,31 @@ renderPlotly({
   num_data1 <- sum(whichAirline$DEPARTURE == dep)
   
   good = 0
-  if (num_data1 > 0){
+  if (num_data1 > 0){ # if there is data from departure airport
     # Filter by departure airport
-      whichDeparture <- filter(whichAirline, DEPARTURE == dep)
-      good = 1
+    whichDeparture <- filter(whichAirline, DEPARTURE == dep)
+    good = 1
+    
+    # Determine which arrival airport was chosen
+    arr <- input$arrival
+    arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
+    
+    # check to make sure there is data
+    num_data2 <- sum(whichDeparture$ARRIVAL == arr)
+    
+    if (num_data2 > 0){ # if there is data from arrival airport
+      # Filter by arrival airport
+      whichArrival <- filter(whichDeparture, ARRIVAL == arr)
+      good = good + 1 # good=2 if have date from both departure and arrival airport
+    }
+    
   }
-  
-  # Determine which arrival airport was chosen
-  arr <- input$arrival
-  arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
-  
-  # check to make sure there is data
-  num_data2 <- sum(whichDeparture$ARRIVAL == arr)
-  
-  if (num_data2 > 0){
-    # Filter by arrival airport
-    whichArrival <- filter(whichDeparture, ARRIVAL == arr)
-    good = 2
-  }
-
-  
   
   # # Determine which date was chosen
   # dateFilter
   # whichDate <- filter(whichData, Country %in% input$country)
-
   
-  
-  if (good == 2) {
+  if (good == 2) { # if have data from both departure and arrival airport
     # final data for plotting
     dat2plot <- whichArrival
     
@@ -226,10 +228,12 @@ renderPlotly({
     # create base plot
     myPlot <- ggplot(dat2plot, aes(x=DATE, y=DEP_DELAY)) +
       geom_point() +
-      scale_y_continuous(name = 'Delay (min)') +
-      scale_x_continuous(name = 'Departure Date') +
+      scale_x_date(date_breaks = "1 month",
+                   date_labels = "%m-%d") +
+      xlab('Delay (min)') +
+      ylab('Departure Date') +
       my_theme
-  } else {
+  } else { # if don't have data from departure/arrival/both airports
     myPlot <- ggplot() +
       annotate("text", x = 4, y = 25, size = 8, label='No Data Available') +
       theme_void()
@@ -245,41 +249,22 @@ renderPlotly({
 ```{r}
 
 renderLeaflet({
-# filter chosen airports
-lat_long <- filter(airport_data, (airports %in% input$departure) | (airports %in% input$arrival))
-
-
-arr_lat_long <- filter(airport_data, airports %in% input$arrival)
-dep_lat_long <- filter(airport_data, airports %in% input$departure)
-
-gcIntermediate(c(dep_lat_long$LONG, dep_lat_long$LAT), c(arr_lat_long$LONG, arr_lat_long$LAT), n=100, addStartEnd = TRUE, sp = TRUE) %>%
-  leaflet() %>%
-  addTiles() %>%
-  addMarkers(lat = lat_long$LAT,
-             lng = lat_long$LONG,
-             popup = paste("<strong>",lat_long$full)) %>%
-  addCircles(lat = lat_long$LAT,
-             lng = lat_long$LONG,
-             weight = 1) %>%
-  addPolylines()
-
-
-# # create plot
-# lat_long %>%
-#   gcIntermediate(LAT, LONG, )
-#   leaflet() %>%
-#   addTiles() %>%
-#   addMarkers(lat = ~LAT,
-#              lng = ~LONG,
-#              popup = paste("<strong>",lat_long$full)) %>% 
-#   addCircles(lat = ~LAT,
-#              lng = ~LONG,
-#              weight = 1)
-
+  # filter chosen airports
+  lat_long <- filter(airport_data, (airports %in% input$departure) | (airports %in% input$arrival))
   
+  arr_lat_long <- filter(airport_data, airports %in% input$arrival)
+  dep_lat_long <- filter(airport_data, airports %in% input$departure)
   
-  
-  
-  })
+  gcIntermediate(c(dep_lat_long$LONG, dep_lat_long$LAT), c(arr_lat_long$LONG, arr_lat_long$LAT), n=100, addStartEnd = TRUE, sp = TRUE) %>%
+    leaflet() %>%
+    addTiles() %>%
+    addMarkers(lat = lat_long$LAT,
+               lng = lat_long$LONG,
+               popup = paste("<strong>",lat_long$full)) %>%
+    addCircles(lat = lat_long$LAT,
+               lng = lat_long$LONG,
+               weight = 1) %>%
+    addPolylines()
+})
 
 ```
