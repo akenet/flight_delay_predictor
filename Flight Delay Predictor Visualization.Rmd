@@ -167,7 +167,8 @@ selectInput(inputId = "arrival", label = "Arrival Airport:",
 
 # which departure date
 dateInput(inputId = "date", label = "Departure Date:",
-          value = "2021-05-01")
+          value = NULL,
+          format = "mm-dd")
 ```
 
 Column {data-width=550}
