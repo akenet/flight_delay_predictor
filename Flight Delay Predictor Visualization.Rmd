@@ -31,95 +31,79 @@ library(geosphere)
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-root = "C:/Users/adamk/Desktop/Flight Delay Predictor"
-setwd(paste0(root,"/flight_delay_predictor"))
+# root = "C:/Users/adamk/Desktop/Flight Delay Predictor"
+# setwd(paste0(root,"/flight_delay_predictor"))
 
 # import individual data files
-dat0 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
-dat1 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights1.csv', col_names = FALSE) %>% 
-  rename('FL_DATE' = 'X1',
-         'OP_CARRIER' = 'X2',
-         'ORIGIN' = 'X3',
-         'DEST' = 'X4',
-         'CRS_DEP_TIME' = 'X5',
-         'DEP_DELAY' = 'X6')
+base_url <- 'https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights'
 
-# combine individual data files
-dat <- rbind(dat0, dat1) %>%
-  rename('DATE' = 'FL_DATE',
-         'AIRLINE' = 'OP_CARRIER',
-         'DEPARTURE' = 'ORIGIN',
-         'ARRIVAL' = 'DEST',
-         'DEP_TIME' = 'CRS_DEP_TIME')
-
-# remove individual data files
-rm(dat0, dat1)
+dat <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
+for(i in 1:60){
+  dat2load <- read_csv(paste0(base_url,i,".csv"), col_names = FALSE) %>% 
+    rename('FL_DATE' = 'X1',
+           'OP_CARRIER' = 'X2',
+           'ORIGIN' = 'X3',
+           'DEST' = 'X4',
+           'CRS_DEP_TIME' = 'X5',
+           'DEP_DELAY' = 'X6')
+  
+  # combine individual data files
+  dat <- rbind(dat, dat2load)
+  
+  # remove individual data file
+  rm(dat2load)
+}
+# change columnn names
+dat <- rename(dat, 'DATE' = 'FL_DATE',
+              'AIRLINE' = 'OP_CARRIER',
+              'DEPARTURE' = 'ORIGIN',
+              'ARRIVAL' = 'DEST',
+              'DEP_TIME' = 'CRS_DEP_TIME')
 
 # remove year from dates
 dat <- mutate(dat, DATE=format(as.Date(DATE), "%m-%d"))
 
 # convert date from chr to date
 dat$DATE <- as.Date(dat$DATE, format = "%m-%d")
-```
 
-```{r}
-########## OLD DATA/CODE JUST AS PLACEHOLDER FOR FLEXDASHBOARD #################
+# add column with departure time of day
+dat <- dat %>%
+  mutate(TIME_OF_DAY = case_when(DEP_TIME >= 1800 ~ 'Evening/Night',
+                                 DEP_TIME >= 1200 ~ 'Afternoon',
+                                 DEP_TIME >= 600 ~ 'Late Morning',
+                                 TRUE ~ 'Early Morning'))
 
-
-# import data from CCSE Github
-cases_raw <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
-deaths_raw <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
-recovered_raw <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
-
-# countries to chose from
-countries <- sort(c("Germany", "Italy", "Japan", "Brazil", "Uganda", "Russia", "Ecuador", "Oman", "Mexico", "Finland", "Vietnam"))
-
-# create df for map plot
-lat_long <- cases_raw %>% filter(Country.Region %in% countries) %>% subset(select = c(Country.Region, Lat, Long)) 
-
-cur_cases <- cases_raw %>% filter(Country.Region %in% countries) %>% subset(select = c(ncol(cases_raw)))
-cur_deaths <- deaths_raw %>% filter(Country.Region %in% countries) %>% subset(select = c(ncol(deaths_raw)))
-cur_recovered <- recovered_raw %>% filter(Country.Region %in% countries) %>% subset(select = c(ncol(recovered_raw)))
-
-lat_long <- cbind(lat_long, cur_cases, cur_deaths, cur_recovered)
-
-colnames(lat_long) <- c("Country", "Lat", "Long", "Current Cases", "Current Deaths", "Current Recovered")
+# add column for if delayed more than 10 minutes
+dat <- dat %>%
+  mutate(DELAYED_BOOL = case_when(DEP_DELAY > 10 ~ 1,
+                                 TRUE ~ 0))
 
 
-# filter data to only include countries of interest
-cases_linear <- cases_raw %>%
-  filter(Country.Region %in% countries) %>% 
-  subset(select = -c(Province.State))
-
-deaths_linear <- deaths_raw %>%
-  filter(Country.Region %in% countries) %>% 
-  subset(select = -c(Province.State))
-
-recovered_linear <- recovered_raw %>%
-  filter(Country.Region %in% countries) %>% 
-  subset(select = -c(Province.State))
-
-# change name of Country.Region column
-colnames(cases_linear)[1] <- "Country"
-colnames(deaths_linear)[1] <- "Country"
-colnames(recovered_linear)[1] <- "Country"
-
-
-# reformat data to make it tidy
-cases_linear <- pivot_longer(cases_linear, !c(Country, Lat, Long), names_to = "Date", values_to = "Value")
-deaths_linear <- pivot_longer(deaths_linear, !c(Country, Lat, Long), names_to = "Date", values_to = "Value")
-recovered_linear <- pivot_longer(recovered_linear, !c(Country, Lat, Long), names_to = "Date", values_to = "Value")
-
-# fix date names
-cases_linear$Date <- sub('^.', '', cases_linear$Date)
-deaths_linear$Date <- sub('^.', '', deaths_linear$Date)
-recovered_linear$Date <- sub('^.', '', recovered_linear$Date)
-
-# convert dates from chr to time
-cases_linear$Date <- mdy(cases_linear$Date)
-deaths_linear$Date <- mdy(deaths_linear$Date)
-recovered_linear$Date <- mdy(recovered_linear$Date)
-
+# dat0 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
+# dat1 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights1.csv', col_names = FALSE) %>% 
+#   rename('FL_DATE' = 'X1',
+#          'OP_CARRIER' = 'X2',
+#          'ORIGIN' = 'X3',
+#          'DEST' = 'X4',
+#          'CRS_DEP_TIME' = 'X5',
+#          'DEP_DELAY' = 'X6')
+# 
+# # combine individual data files
+# dat <- rbind(dat0, dat1) %>%
+#   rename('DATE' = 'FL_DATE',
+#          'AIRLINE' = 'OP_CARRIER',
+#          'DEPARTURE' = 'ORIGIN',
+#          'ARRIVAL' = 'DEST',
+#          'DEP_TIME' = 'CRS_DEP_TIME')
+# 
+# # remove individual data files
+# rm(dat0, dat1)
+# 
+# # remove year from dates
+# dat <- mutate(dat, DATE=format(as.Date(DATE), "%m-%d"))
+# 
+# # convert date from chr to date
+# dat$DATE <- as.Date(dat$DATE, format = "%m-%d")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -144,7 +128,7 @@ departures = sort(unique(dat$DEPARTURE))
 ```
 
 
-Column {.sidebar data-width=400}
+Column {.sidebar data-width=300}
 -----------------------------------------------------------------------
 
 ### Your Flight:
@@ -169,14 +153,25 @@ selectInput(inputId = "arrival", label = "Arrival Airport:",
 dateInput(inputId = "date", label = "Departure Date:",
           value = NULL,
           format = "mm-dd")
+
+# which departure time
+selectInput(inputId = "time", label = "Departure Time:",
+            choices = list("12:00 am - 5:59 am" = "Early Morning",
+                           "6:00 am - 11:59 am" = "Late Morning",
+                           "12 pm - 5:59 pm" = "Afternoon",
+                           "6:00 pm - 11:59 pm" = "Evening/Night"),
+            selected = 'Late Morning')
+
+actionButton("run", label = "Submit")
 ```
 
-Column {data-width=550}
+Column {data-width=400}
 -----------------------------------------------------------------------
 
-#### testing
+#### Historical Delays for Your Specific Flight
+##### (Airline, Route, Day, Time)
 ```{r}
-renderPlotly({
+p <- eventReactive(input$run, {
   
   # Determine which date was chosen
   date <- substr(input$date, 6, 10) # only want month and day
@@ -209,14 +204,30 @@ renderPlotly({
     if (num_data2 > 0){ # if there is data from arrival airport
       # Filter by arrival airport
       whichArrival <- filter(whichDeparture, ARRIVAL == arr)
-      good = good + 1 # good=2 if have date from both departure and arrival airport
+      good = good + 1 # good=2 if have data from both departure and arrival airport
+      
+      # Determine which time was chosen
+      time <- input$time
+      
+      # check to make sure there is data
+      num_data3 <- sum(whichArrival$TIME_OF_DAY == time)
+      
+      if (num_data3 > 0){ # if there is data on that route during that time
+        whichTime <- filter(whichArrival, TIME_OF_DAY == time)
+        good = good + 1 # good=3 if have data on that route during that time
+        
+        # calculate percent delayed
+        num_flights <- nrow(whichTime) # total number of flights
+        num_delayed <- sum(whichTime$DELAYED_BOOL) # number of delayed flights (>10 min)
+        frac_delayed <- num_delayed / num_flights
+      }
+      
     }
-    
   }
   
-  if (good == 2) { # if have data from both departure and arrival airport
+  if (good == 3) { # if have data on that route during that time
     # final data for plotting
-    dat2plot <- whichArrival
+    dat2plot <- whichTime
     
     # set up theme
     my_theme <- theme_classic() +
@@ -228,8 +239,19 @@ renderPlotly({
             axis.text.y = element_text(margin = margin(0,5,0,0)))
     
     # create base plot
-    myPlot <- ggplot(dat2plot, aes(y=DEP_DELAY)) +
-      geom_bar() +
+    myPlot <- 
+
+      # myPlot <- ggplot(dat2plot) +
+      # geom_bar(aes(x="", y=DELAYED_BOOL), stat="identity", width = 1) +
+      # coord_polar(theta = "y", start = 0)
+      
+      ggplot() + 
+      annotate("text", x = 4, y = 25, size = 8,
+               label=paste0(round(frac_delayed,4)*100,"% (",num_delayed,"/",num_flights,") delayed more than 10 minutes.")) +
+      theme_void()
+      
+      # ggplot(dat2plot, aes(y=DEP_DELAY)) +
+      # geom_bar() +
       # scale_x_date(date_breaks = "1 month",
       #              date_labels = "%m-%d") +
       # ylab('Delay (min)') +
@@ -237,7 +259,7 @@ renderPlotly({
       my_theme
   } else { # if don't have data from departure/arrival/both airports
     myPlot <- ggplot() +
-      annotate("text", x = 4, y = 25, size = 8, label='No Data Available') +
+      annotate("text", x = 4, y = 25, size = 8, label='No Data Available at Your Departure Time') +
       theme_void()
   }
   
@@ -245,13 +267,17 @@ renderPlotly({
   plotly_build(myPlot)
   
 })
+
+renderPlotly({
+  p()
+})
 ```
 
 
 
-#### Historical Delays For Your Flight
+#### Historical Delays For Your Route and Airline
 ```{r}
-renderPlotly({
+p2 <- eventReactive(input$run, {
   # Filter by airline
   whichAirline <- filter(dat, AIRLINE == input$airline)
   
@@ -297,8 +323,10 @@ renderPlotly({
             axis.text.y = element_text(margin = margin(0,5,0,0)))
     
     # create base plot
-    myPlot <- ggplot(dat2plot, aes(x=DATE, y=DEP_DELAY)) +
-      geom_point() +
+    myPlot <- ggplot(dat2plot) +
+      geom_point(aes(x=DATE, y=DEP_DELAY, colour=DEP_DELAY > 10)) +
+      scale_colour_manual(name = 'Delayed', values = setNames(c('red','green'),c(T,F))) +
+  
       scale_x_date(date_breaks = "1 month",
                    date_labels = "%m-%d") +
       ylab('Delay (min)') +
@@ -306,7 +334,7 @@ renderPlotly({
       my_theme
   } else { # if don't have data from departure/arrival/both airports
     myPlot <- ggplot() +
-      annotate("text", x = 4, y = 25, size = 8, label='No Data Available') +
+      annotate("text", x = 4, y = 25, size = 8, label='No Data Available on Your Route+Airline') +
       theme_void()
   }
   
@@ -314,11 +342,14 @@ renderPlotly({
   plotly_build(myPlot)
   
 })
+
+renderPlotly({
+  p2()
+})
 ```
 
-#### Airports
+#### Your Trip
 ```{r}
-
 renderLeaflet({
   # filter chosen airports
   lat_long <- filter(airport_data, (airports %in% input$departure) | (airports %in% input$arrival))
