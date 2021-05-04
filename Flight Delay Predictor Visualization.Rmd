@@ -26,6 +26,7 @@ library(shiny)
 library(lubridate)
 library(googleVis)
 library(leaflet)
+library(geosphere)
 ```
 
 
@@ -56,6 +57,9 @@ rm(dat0, dat1)
 ```
 
 ```{r}
+########## OLD DATA/CODE JUST AS PLACEHOLDER FOR FLEXDASHBOARD #################
+
+
 # import data from CCSE Github
 cases_raw <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 deaths_raw <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
@@ -113,22 +117,24 @@ recovered_linear$Date <- mdy(recovered_linear$Date)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# import data on airports in data
 airport_data <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/airports_filtered.csv')
 
+# add column that includes name and IATA code together
 airport_data <- airport_data %>% mutate(full = paste0(airport_data$NAME, ' (', airport_data$IATA, ')'))
 
+# alphabetize the data by airport name
 airport_data <- airport_data[order(airport_data$full),]
-
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+# create unique lists
 airlines = sort(unique(dat$AIRLINE))
 airports = sort(unique(airport_data$full))
 
-
-
-
+arrivals = sort(unique(dat$ARRIVAL))
+departures = sort(unique(dat$DEPARTURE))
 ```
 
 
@@ -153,140 +159,85 @@ selectInput(inputId = "arrival", label = "Arrival Airport:",
             choices = airports,
             selected = 'Los Angeles International Airport (LAX)')
 
-# which departure date
+# wh
+  # Determine which departure airport ich departure date
 dateInput(inputId = "date", label = "Departure Date:",
           value = "2021-05-01")
-
-
-
-# which start
-selectInput(inputId = "start", label = "Choose when to start plot:",
-            choices = c('show all data', 'show from first day of data'),
-            selected = 'show all data')
-
-# which scales
-selectInput(inputId = "scale", label = "Choose a scale:",
-            choices = c('log', 'linear'),
-            selected = 'log')
-
-# smoothed line
-radioButtons(inputId = "smooth", label = "Do you want to show a smoothed line?",
-             choices = list("Yes", "No"),
-             selected = "No")
-
 ```
 
-Columnn {data-width=550}
+Column {data-width=550}
 -----------------------------------------------------------------------
 
-#### COVID-19 Case Tracker
+#### Historical Delays For Your Flight
 ```{r}
 renderPlotly({
   
-  # Determine which type of data was chosen
-  whichData <- switch(input$data,
-                'cases'=cases_linear,
-                'deaths'=deaths_linear,
-                'recovered'=recovered_linear
-  )
-  # change y-axis for each type of data
-  y_label <- switch(input$data,
-                      'cases'='Cases',
-                      'deaths'='Deaths',
-                      'recovered'='Recovered'
-  )
-  # what type of data was chosen (for x-axis label)
-  type <- switch(input$data,
-                 'cases'='Case',
-                 'deaths'='Death',
-                 'recovered'='Recovered'
-  )
-
-  # Determine which countries were chosen
-  whichCountries <- filter(whichData, Country %in% input$country)
-
-
-  # Determine which scale was chosen
-  whichScale <- switch(input$scale,
-                       'linear'=whichCountries,
-                       'log'=data.frame(Country = whichCountries$Country,
-                                        Date = whichCountries$Date,
-                                        Value = log(whichCountries$Value))
-  )
-  # change y-axis label for log scale
-  if(input$scale=='log'){
-    y_label <- paste(y_label,'(log)')
-  }
-
-
-  # Determine when to start plot
-  whichStart <- switch(input$start,
-                       'show all data'=whichScale,
-                       'show from first day of data'={
-                         # so not overwriting data
-                         dummy_data <- whichScale %>% group_by(Country)
-
-                         # convert dates to day number
-                         dummy_data$Date <- as.integer(dummy_data$Date - min(dummy_data$Date))
-
-                         # remove days with no cases
-                         dummy_data <- filter(dummy_data, Value>0)
-
-                         # create column of start dates
-                         start_dates <- summarise(dummy_data, rep(min(Date),length(Date)))
-
-                         # subtract start date
-                         dummy_data$Date <- dummy_data$Date - start_dates$`rep(min(Date), length(Date))`
-
-                         dummy_data
-                       }
-  )
-  # change x-axis label
-  if(input$start=='show from first day of data'){
-    x_label <- paste('Day Since First',type)
-  }
-  else{
-    x_label <- 'Date'
-  }
-
-  # final data for plotting
-  dat2plot <- whichStart
+  # Filter by airline
+  whichAirline <- filter(dat, AIRLINE == input$airline)
   
-  # set up theme
-  my_theme <- theme_classic() +
-    theme(text = element_text(size = 14),
-          plot.title = element_text(hjust = 0.5),
-          axis.title.x = element_text(margin = margin(10,0,0,0)),
-          axis.title.y = element_text(margin = margin(0,10,0,0)),
-          axis.text.x = element_text(margin = margin(5,0,0,0)),
-          axis.text.y = element_text(margin = margin(0,5,0,0)))
+  # Determine which departure airport was chosen
+  dep <- input$departure
+  dep <- substr(dep, nchar(dep)-3, nchar(dep)-1) # get only the IATA code
   
-  # create base plot
-  basePlot <- ggplot(dat2plot, aes(x=Date, y=Value, color = Country)) +
-    geom_line() +
-    scale_y_continuous(name = y_label) +
-    my_theme
+  # check to make sure there is data
+  num_data1 <- sum(whichAirline$DEPARTURE == dep)
   
-  # fix x-axis labels for plot
-  if(input$start=='show from first day of data'){
-    basePlot2 <- basePlot +
-      scale_x_continuous(name = paste('Days Since First',type))
-  }
-  else{
-    basePlot2 <- basePlot
+  good = 0
+  if (num_data1 > 0){
+    # Filter by departure airport
+      whichDeparture <- filter(whichAirline, DEPARTURE == dep)
+      good = 1
   }
   
-  # add smoothed line
-  if(input$smooth=='Yes'){
-    myPlot <- basePlot2 + geom_smooth(se=FALSE)
-  }
-  else{
-    myPlot <- basePlot2
-  }
+  # Determine which arrival airport was chosen
+  arr <- input$arrival
+  arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
   
+  # check to make sure there is data
+  num_data2 <- sum(whichDeparture$ARRIVAL == arr)
+  
+  if (num_data2 > 0){
+    # Filter by arrival airport
+    whichArrival <- filter(whichDeparture, ARRIVAL == arr)
+    good = 2
+  }
+
+  
+  
+  # # Determine which date was chosen
+  # dateFilter
+  # whichDate <- filter(whichData, Country %in% input$country)
+
+  
+  
+  if (good == 2) {
+    # final data for plotting
+    dat2plot <- whichArrival
+    
+    # set up theme
+    my_theme <- theme_classic() +
+      theme(text = element_text(size = 14),
+            plot.title = element_text(hjust = 0.5),
+            axis.title.x = element_text(margin = margin(10,0,0,0)),
+            axis.title.y = element_text(margin = margin(0,10,0,0)),
+            axis.text.x = element_text(margin = margin(5,0,0,0)),
+            axis.text.y = element_text(margin = margin(0,5,0,0)))
+    
+    # create base plot
+    myPlot <- ggplot(dat2plot, aes(x=DATE, y=DEP_DELAY)) +
+      geom_point() +
+      scale_y_continuous(name = 'Delay (min)') +
+      scale_x_continuous(name = 'Departure Date') +
+      my_theme
+  } else {
+    myPlot <- ggplot() +
+      annotate("text", x = 4, y = 25, size = 8, label='No Data Available') +
+      theme_void()
+  }
   
   # make interactive
   plotly_build(myPlot)
+  
 })
 ```
 
@@ -297,16 +248,38 @@ renderLeaflet({
 # filter chosen airports
 lat_long <- filter(airport_data, (airports %in% input$departure) | (airports %in% input$arrival))
 
-# create plot
-lat_long %>%
+
+arr_lat_long <- filter(airport_data, airports %in% input$arrival)
+dep_lat_long <- filter(airport_data, airports %in% input$departure)
+
+gcIntermediate(c(dep_lat_long$LONG, dep_lat_long$LAT), c(arr_lat_long$LONG, arr_lat_long$LAT), n=100, addStartEnd = TRUE, sp = TRUE) %>%
   leaflet() %>%
   addTiles() %>%
-  addMarkers(lat = ~LAT,
-             lng = ~LONG,
-             popup = paste("<strong>",lat_long$full)) %>% 
-  addCircles(lat = ~LAT,
-             lng = ~LONG,
-             weight = 1)
-})
+  addMarkers(lat = lat_long$LAT,
+             lng = lat_long$LONG,
+             popup = paste("<strong>",lat_long$full)) %>%
+  addCircles(lat = lat_long$LAT,
+             lng = lat_long$LONG,
+             weight = 1) %>%
+  addPolylines()
+
+
+# # create plot
+# lat_long %>%
+#   gcIntermediate(LAT, LONG, )
+#   leaflet() %>%
+#   addTiles() %>%
+#   addMarkers(lat = ~LAT,
+#              lng = ~LONG,
+#              popup = paste("<strong>",lat_long$full)) %>% 
+#   addCircles(lat = ~LAT,
+#              lng = ~LONG,
+#              weight = 1)
+
+  
+  
+  
+  
+  })
 
 ```
