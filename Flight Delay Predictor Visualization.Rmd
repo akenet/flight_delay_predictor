@@ -38,7 +38,7 @@ library(geosphere)
 base_url <- 'https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights'
 
 dat <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
-for(i in 1:60){
+for(i in 53:60){
   dat2load <- read_csv(paste0(base_url,i,".csv"), col_names = FALSE) %>% 
     rename('FL_DATE' = 'X1',
            'OP_CARRIER' = 'X2',
@@ -53,7 +53,7 @@ for(i in 1:60){
   # remove individual data file
   rm(dat2load)
 }
-# change columnn names
+# change column names
 dat <- rename(dat, 'DATE' = 'FL_DATE',
               'AIRLINE' = 'OP_CARRIER',
               'DEPARTURE' = 'ORIGIN',
@@ -78,32 +78,9 @@ dat <- dat %>%
   mutate(DELAYED_BOOL = case_when(DEP_DELAY > 10 ~ 1,
                                  TRUE ~ 0))
 
-
-# dat0 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
-# dat1 <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights1.csv', col_names = FALSE) %>% 
-#   rename('FL_DATE' = 'X1',
-#          'OP_CARRIER' = 'X2',
-#          'ORIGIN' = 'X3',
-#          'DEST' = 'X4',
-#          'CRS_DEP_TIME' = 'X5',
-#          'DEP_DELAY' = 'X6')
-# 
-# # combine individual data files
-# dat <- rbind(dat0, dat1) %>%
-#   rename('DATE' = 'FL_DATE',
-#          'AIRLINE' = 'OP_CARRIER',
-#          'DEPARTURE' = 'ORIGIN',
-#          'ARRIVAL' = 'DEST',
-#          'DEP_TIME' = 'CRS_DEP_TIME')
-# 
-# # remove individual data files
-# rm(dat0, dat1)
-# 
-# # remove year from dates
-# dat <- mutate(dat, DATE=format(as.Date(DATE), "%m-%d"))
-# 
-# # convert date from chr to date
-# dat$DATE <- as.Date(dat$DATE, format = "%m-%d")
+# add column for day number instead of date
+dat <- dat %>% 
+  mutate(DAY_NUM = yday(DATE))
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -155,12 +132,16 @@ dateInput(inputId = "date", label = "Departure Date:",
           format = "mm-dd")
 
 # which departure time
-selectInput(inputId = "time", label = "Departure Time:",
-            choices = list("12:00 am - 5:59 am" = "Early Morning",
-                           "6:00 am - 11:59 am" = "Late Morning",
-                           "12 pm - 5:59 pm" = "Afternoon",
-                           "6:00 pm - 11:59 pm" = "Evening/Night"),
-            selected = 'Late Morning')
+numericInput(inputId = "time",
+          label = "Departure Time (please enter in military time. eg. 1:45 pm would be 1345.)",
+          value = 1345)
+
+# selectInput(inputId = "time", label = "Departure Time:",
+#             choices = list("12:00 am - 5:59 am" = "Early Morning",
+#                            "6:00 am - 11:59 am" = "Late Morning",
+#                            "12 pm - 5:59 pm" = "Afternoon",
+#                            "6:00 pm - 11:59 pm" = "Evening/Night"),
+#             selected = 'Late Morning')
 
 actionButton("run", label = "Submit")
 ```
@@ -168,18 +149,11 @@ actionButton("run", label = "Submit")
 Column {data-width=400}
 -----------------------------------------------------------------------
 
-#### Historical Delays for Your Specific Flight
-##### (Airline, Route, Day, Time)
+#### Our Model Predicts:
 ```{r}
-p <- eventReactive(input$run, {
-  
-  # Determine which date was chosen
-  date <- substr(input$date, 6, 10) # only want month and day
-  date <- as.Date(date, format = "%m-%d") # convert date from chr to date
-  whichDate <- filter(dat, DATE == date)
-
+p0 <- eventReactive(input$run, {
   # Filter by airline
-  whichAirline <- filter(whichDate, AIRLINE == input$airline)
+  whichAirline <- filter(dat, AIRLINE == input$airline)
   
   # Determine which departure airport was chosen
   dep <- input$departure
@@ -193,41 +167,24 @@ p <- eventReactive(input$run, {
     # Filter by departure airport
     whichDeparture <- filter(whichAirline, DEPARTURE == dep)
     good = 1
-    
-    # Determine which arrival airport was chosen
-    arr <- input$arrival
-    arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
-    
-    # check to make sure there is data
-    num_data2 <- sum(whichDeparture$ARRIVAL == arr)
-    
-    if (num_data2 > 0){ # if there is data from arrival airport
-      # Filter by arrival airport
-      whichArrival <- filter(whichDeparture, ARRIVAL == arr)
-      good = good + 1 # good=2 if have data from both departure and arrival airport
-      
-      # Determine which time was chosen
-      time <- input$time
-      
-      # check to make sure there is data
-      num_data3 <- sum(whichArrival$TIME_OF_DAY == time)
-      
-      if (num_data3 > 0){ # if there is data on that route during that time
-        whichTime <- filter(whichArrival, TIME_OF_DAY == time)
-        good = good + 1 # good=3 if have data on that route during that time
-        
-        # calculate percent delayed
-        num_flights <- nrow(whichTime) # total number of flights
-        num_delayed <- sum(whichTime$DELAYED_BOOL) # number of delayed flights (>10 min)
-        frac_delayed <- num_delayed / num_flights
-      }
-      
-    }
   }
   
-  if (good == 3) { # if have data on that route during that time
-    # final data for plotting
-    dat2plot <- whichTime
+  if (good == 1) { # if have data from both airline and departure airport
+    # filtered data for training model (only chosen airline from chosen departure city)
+    dat2train <- whichDeparture
+    
+    # train model on filtered data
+    myModel <- lm(DEP_DELAY ~ DEP_TIME + DAY_NUM, data = dat2train)
+    
+    # predict using user input for departure time and day of year
+    b0 <- coef(myModel)[1]
+    b1 <- coef(myModel)[2]
+    b2 <- coef(myModel)[3]
+    
+    
+    predicted_delay <- b0 + (b1*input$time) + (b2*yday(input$date))
+    
+    
     
     # set up theme
     my_theme <- theme_classic() +
@@ -239,27 +196,14 @@ p <- eventReactive(input$run, {
             axis.text.y = element_text(margin = margin(0,5,0,0)))
     
     # create base plot
-    myPlot <- 
-
-      # myPlot <- ggplot(dat2plot) +
-      # geom_bar(aes(x="", y=DELAYED_BOOL), stat="identity", width = 1) +
-      # coord_polar(theta = "y", start = 0)
-      
-      ggplot() + 
+    myPlot <- myPlot <- ggplot() +
       annotate("text", x = 4, y = 25, size = 8,
-               label=paste0(round(frac_delayed,4)*100,"% (",num_delayed,"/",num_flights,") delayed more than 10 minutes.")) +
+               label=paste0("Your flight will be delayed by ~", round(predicted_delay,2), " minutes.")) +
       theme_void()
-      
-      # ggplot(dat2plot, aes(y=DEP_DELAY)) +
-      # geom_bar() +
-      # scale_x_date(date_breaks = "1 month",
-      #              date_labels = "%m-%d") +
-      # ylab('Delay (min)') +
-      # xlab('Departure Date') +
-      my_theme
-  } else { # if don't have data from departure/arrival/both airports
+  } else { # if don't have data from departure airport on airline
     myPlot <- ggplot() +
-      annotate("text", x = 4, y = 25, size = 8, label='No Data Available at Your Departure Time') +
+      annotate("text", x = 4, y = 25, size = 8,
+               label=paste0("No Data Available on ", input$airline, "from ", input$deptarture)) +
       theme_void()
   }
   
@@ -269,11 +213,119 @@ p <- eventReactive(input$run, {
 })
 
 renderPlotly({
-  p()
+  p0()
 })
 ```
 
 
+#### Historical Delays for Your Specific Flight
+##### (Airline, Route, Day, Time)
+```{r}
+p1 <- eventReactive(input$run, {
+
+  # Determine which date was chosen
+  date <- substr(input$date, 6, 10) # only want month and day
+  date <- as.Date(date, format = "%m-%d") # convert date from chr to date
+  whichDate <- filter(dat, DATE == date)
+
+  # Filter by airline
+  whichAirline <- filter(whichDate, AIRLINE == input$airline)
+
+  # Determine which departure airport was chosen
+  dep <- input$departure
+  dep <- substr(dep, nchar(dep)-3, nchar(dep)-1) # get only the IATA code
+
+  # check to make sure there is data
+  num_data1 <- sum(whichAirline$DEPARTURE == dep)
+
+  good = 0
+  if (num_data1 > 0){ # if there is data from departure airport
+    # Filter by departure airport
+    whichDeparture <- filter(whichAirline, DEPARTURE == dep)
+    good = 1
+
+    # Determine which arrival airport was chosen
+    arr <- input$arrival
+    arr <- substr(arr, nchar(arr)-3, nchar(arr)-1) # get only the IATA code
+
+    # check to make sure there is data
+    num_data2 <- sum(whichDeparture$ARRIVAL == arr)
+
+    if (num_data2 > 0){ # if there is data from arrival airport
+      # Filter by arrival airport
+      whichArrival <- filter(whichDeparture, ARRIVAL == arr)
+      good = good + 1 # good=2 if have data from both departure and arrival airport
+
+      # Determine which time was chosen
+      time <- input$time
+
+      # convert time into time period
+      time <- case_when(DEP_TIME >= 1800 ~ 'Evening/Night',
+                                 DEP_TIME >= 1200 ~ 'Afternoon',
+                                 DEP_TIME >= 600 ~ 'Late Morning',
+                                 TRUE ~ 'Early Morning')
+      # if (time >= 1800){
+      #   time <- 'Evening/Night'
+      # }
+      # else if (time >= 1200){
+      #   time <- 'Afternoon'
+      # }
+      # else if (time >= 600){
+      #   time <- 'Late Morning'
+      # }
+      # else {
+      #   time <- 'Morning'
+      # }
+
+      # check to make sure there is data
+      num_data3 <- sum(whichArrival$TIME_OF_DAY == time)
+
+      if (num_data3 > 0){ # if there is data on that route during that time
+        whichTime <- filter(whichArrival, TIME_OF_DAY == time)
+        good = good + 1 # good=3 if have data on that route during that time
+
+        # calculate percent delayed
+        num_flights <- nrow(whichTime) # total number of flights
+        num_delayed <- sum(whichTime$DELAYED_BOOL) # number of delayed flights (>10 min)
+        frac_delayed <- num_delayed / num_flights
+      }
+    }
+  }
+
+  if (good == 3) { # if have data on that route during that time
+    # final data for plotting
+    dat2plot <- whichTime
+
+    # set up theme
+    my_theme <- theme_classic() +
+      theme(text = element_text(size = 14),
+            plot.title = element_text(hjust = 0.5),
+            axis.title.x = element_text(margin = margin(10,0,0,0)),
+            axis.title.y = element_text(margin = margin(0,10,0,0)),
+            axis.text.x = element_text(margin = margin(5,0,0,0)),
+            axis.text.y = element_text(margin = margin(0,5,0,0)))
+
+    # create base plot
+    myPlot <- ggplot() +
+      annotate("text", x = 4, y = 25, size = 8,
+               label=paste0(round(frac_delayed,4)*100,"% (",num_delayed,"/",num_flights,") delayed more than 10 minutes.")) +
+      theme_void()
+  } else { # if don't have data from departure/arrival/both airports
+    myPlot <- ggplot() +
+      annotate("text", x = 4, y = 25, size = 8, label = 'No Data Available At Your Time') +
+               # label=paste0('No Data Available in the ', time)) +
+      theme_void()
+  }
+
+  # make interactive
+  plotly_build(myPlot)
+
+})
+
+renderPlotly({
+  p1()
+})
+```
 
 #### Historical Delays For Your Route and Airline
 ```{r}
@@ -368,5 +420,4 @@ renderLeaflet({
                weight = 1) %>%
     addPolylines()
 })
-
 ```
