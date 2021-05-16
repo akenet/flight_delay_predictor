@@ -20,19 +20,19 @@
 
 
 
-#Flight Delay Estimation Project
+# Flight Delay Estimation Project
 
-##Authors: 
+## Authors: 
 
 Adam Kenet: Graphic UI Design & Implementation
 
 (Karl) Sangwon Lee: Model Design & Evaluation
 
-##Link for the App: https://akenet.shinyapps.io/Flight_Delay_Predictor/
+## Link for the App: https://akenet.shinyapps.io/Flight_Delay_Predictor/
 
 Description of the App
 
-##Background
+## Background
 
 Flight delay is a valuable topic of interest due to its associated financial losses in the aviation industry. 2018 US data from Bureau of Transportation Statistics (BTS) indicates that more than 20% of US flights were delayed in 2018, resulting in severe economic impact around 41 billion USD. Such delays not only disrupt flight industries, but also many passengers, as the increase of travel time and schedule changes create financial inconveniences and additional stresses for many. Unexpected flight delays as a result further harms an airline’s reputation. 
 
