@@ -70,7 +70,7 @@ Flight date and flight time of the day were numerical data, whereas the other th
 
 An attempt at reducing the levels of these categorical factors, such as reducing the number of departing airports to top 50 frequent airports, actually ended up harming the model’s performance and usability. 
 
-In light of this problem, we decided to perform an ‘on-the-spot’ training of our linear model, in which we train our model each time the user submits their flight's information, and train it only on the relevant data that has been filtered using the user's input. For example, the user’s choice of American Airlines and departing airport as BWI would filter the dataset to show only American Airlines flights from BWI.
+In light of this problem, we decided to perform an ‘on-the-spot’ training of our linear model, in which we train our model each time the user submits their flight's information, and train it only on the relevant data that has been filtered using the user's input. For example, the user’s choice of Southwest and departing airport as BWI would filter the dataset to show only Southwest flights from BWI.
 
 Then, the linear regression problem becomes much simpler, where we fit delay time in minutes against two numerical predictors: flight date and time of the flight. Flight date was converted to an integer from 1 to 365, and time of the flight was defined as from 1 to 2400.
 
