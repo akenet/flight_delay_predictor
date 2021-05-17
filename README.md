@@ -1,25 +1,3 @@
-# flight_delay_predictor
-
-[Link to Data](<https://drive.google.com/drive/folders/1RYEbID7LjLgQw-ikG2i801AvsaWu56qq?usp=sharing>)
-
-•Airline Delay and Cancellation Data, 2009 - 2018 | Kaggle <https://www.kaggle.com/yuanyuwendymu/airline-delay-and-cancellation-data-2009-2018>
-
-•2015 Flight Delays and Cancellations | Kaggle <https://www.kaggle.com/usdot/flight-delays>
-
-•Find Open Datasets and Machine Learning Projects | Kaggle <https://www.kaggle.com/datasets?topic=trendingDataset>
-
-•Predicting flight delays [Tutorial] | Kaggle <https://www.kaggle.com/fabiendaniel/predicting-flight-delays-tutorial/data?select=flights.csv>
-
-•Using Machine Learning to Predict Flight Delays | by Javier Herbas | Analytics Vidhya | Medium <https://medium.com/analytics-vidhya/using-machine-learning-to-predict-flight-delays-e8a50b0bb64c>
-
-
-
-
-
--------
-
-
-
 # Flight Delay Estimation Project
 
 ## Authors: 
@@ -79,6 +57,8 @@ Model’s performance was qualitatively evaluated based on our comparison agains
 
 Left Control Panel:
 
+![Left Control Panel 1](Fig1.png)
+
 Users input the airline of their flight
 Users input the departing airport name. Users can easily type the name of the airport instead of trying to find one among 357 airports.
 Likewise, users can select the arrival airport.
@@ -91,17 +71,23 @@ Pressing the ‘Submit’ button will then perform training and prediction, as w
 Right Display Panel:
 
 
+![Right Display Panel 1](Fig2.png)
+
 
 First plot on the right is the text display of how much the user’s flight will be delayed in minutes.
 
+![Right Display Panel 2](Fig3.png)
 
 
 Second plot on the right is a text display of how many specific flights similar to the user’s choice were delayed or not. 
 
+![Right Display Panel 3](Fig4.png)
 
 
 Third plot on the right depicts historical flight data for the specific airline and different departure dates.
 
-
+![Right Display Panel 4](Fig5.png)
 
 Last plot on the right panel provides a visual aid to the geographic connection between two US airports. Geodesic line is also displayed to depict the flight’s physical route.
+
+
