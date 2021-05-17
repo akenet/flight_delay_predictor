@@ -38,7 +38,7 @@ library(geosphere)
 base_url <- 'https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights'
 
 dat <- read_csv('https://raw.githubusercontent.com/akenet/flight_delay_predictor/main/Data/flights0.csv')
-for(i in 53:56){
+for(i in 1:60){
   dat2load <- read_csv(paste0(base_url,i,".csv"), col_names = FALSE) %>% 
     rename('FL_DATE' = 'X1',
            'OP_CARRIER' = 'X2',
