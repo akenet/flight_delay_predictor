@@ -1,6 +1,6 @@
 # Flight Delay Estimation Project
 
-## Authors: 
+## Authors
 
 Adam Kenet: Graphic UI Design & Implementation
 
@@ -8,7 +8,28 @@ Adam Kenet: Graphic UI Design & Implementation
 
 ## Link for the App: https://akenet.shinyapps.io/Flight_Delay_Predictor/
 
-Description of the App
+## Link for video: 
+
+## System and Library Requirements
+
+### System:
+CPU: i9-10885H<br />
+RAM: 32 GB
+
+
+### Library:
+library(flexdashboard)<br />
+library(tidyverse)<br />
+library(dplyr)<br />
+library(plotly)<br />
+library(shiny)<br />
+library(lubridate)<br />
+library(googleVis)<br />
+library(leaflet)<br />
+library(geosphere)
+
+
+# Description of the App
 
 ## Background
 
@@ -20,16 +41,15 @@ Previous projects related to ML-based prediction of flight delays have been limi
 
 
 
-
-## Data:
+## Data
 All data used in this model is publicly available on Kaggle: https://www.kaggle.com/yuanyuwendymu/airline-delay-and-cancellation-data-2009-2018. This dataset contains information on over 60 million US domestic flights from 2009 to 2018. The important features for the model are airline, departure/arrival airports, day of departure, scheduled time of departure, and delay. The delay was determined by subtracting the time of the scheduled departure from the time of the actual departure. Note that flights that left early have a negative delay time. For the purposes of our project, only flights with a delay greater than 10 minutes are considered to be delayed.
 
 
-## Processing:
+## Processing
 The original dataset we are using had over 60 million flights and 28 features. This large amount of data (7+ GB) initially made it difficult to access and load into our model. Therefore, we first pre-processed the data to remove any irrelevant features which reduced the overall size of the data. Additionally, all abbreviations for airlines and airports were changed to include the full name of the airline/airport. The dataset containing information on each airport in the main dataset can be found here: https://github.com/akenet/flight_delay_predictor/blob/main/airports_filtered.csv. Finally, in order to upload the data onto Github where each file size needs to be less than 100 MB, the dataset was broken into 61 files each with approximately one million flights. These data can be found here: https://github.com/akenet/flight_delay_predictor/tree/main/Data and the Python code for preprocessing can be found here: https://github.com/akenet/flight_delay_predictor/blob/main/Flight%20Delay%20Predictor%20Data%20Munging.ipynb
 
 
-## Model Design:
+## Model Design
 
 We used a generalized linear model to fit a linear regression into the delay time data. Based on the user inputs, 5 predictors were relevant:
 
