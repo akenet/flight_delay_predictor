@@ -6,7 +6,7 @@ Adam Kenet: Graphic UI Design & Implementation
 
 (Karl) Sangwon Lee: Model Design & Evaluation
 
-## Link for the App: https://akenet.shinyapps.io/Flight_Delay_Predictor/
+## Link for the App: https://akenet.shinyapps.io/Flight_Delay_Predictor/ (demo version)
 
 ## Link for video: 
 
@@ -33,7 +33,7 @@ library(geosphere)
 
 ## Background
 
-Flight delay is a valuable topic of interest due to its associated financial losses in the aviation industry. 2018 US data from Bureau of Transportation Statistics (BTS) indicates that more than 20% of US flights were delayed in 2018, resulting in severe economic impact around 41 billion USD. Such delays not only disrupt flight industries, but also many passengers, as the increase of travel time and schedule changes create financial inconveniences and additional stresses for many. Unexpected flight delays as a result further harms an airline’s reputation. 
+Flight delay is a valuable topic of interest due to its associated financial losses in the aviation industry. US data from the Bureau of Transportation Statistics (BTS) indicates that more than 20% of US flights were delayed in 2018, resulting in severe economic impact around $41 billion. Such delays not only disrupt flight industries, but also many passengers, as the increase of travel time and schedule changes create financial inconveniences and additional stresses for many. Unexpected flight delays as a result further harms an airline’s reputation. 
 
 Although the causes behind these delays can widely vary - air traffic congestion, weather conditions, mechanical issues, troubles with boarding passengers, etc. - we were motivated to see if we could adopt a machine learning based approach to extract a pattern from an existing dataset on flight delays and create a model that could predict and estimate flight delays that passengers could utilize.
 
@@ -53,42 +53,47 @@ The original dataset we are using had over 60 million flights and 28 features. T
 
 We used a generalized linear model to fit a linear regression into the delay time data. Based on the user inputs, 5 predictors were relevant:
 
-Flight date
-Flight time of the day
-Airline name
-Departing airport
-Arrival Airport
+- Flight date
+- Flight time of the day
+- Airline name
+- Departing airport
+- Arrival airport
 
-Then, we attempted several designs regarding the linear model based on these 5 predictors. However, as arrival airport was not relevant to the departing delay, the total predictors we had to deal with were 4 predictors.
+Then, we attempted several designs regarding the linear model based on these 5 predictors. However, as arrival airport was not relevant to the departing delay, the total predictors we used were the other 4 predictors:
+
+- Flight date
+- Flight time of the day
+- Airline name
+- Departing airport
 
 Flight date and flight time of the day were numerical data, whereas the other three were categorical variables. Airline names had 23 categories, and airports had 357 categories. Our original attempt to create an interacting linear model using these categorical variables as an individual factor of one-hot vectors did not succeed due to an out of memory issue. 
 
 An attempt at reducing the levels of these categorical factors, such as reducing the number of departing airports to top 50 frequent airports, actually ended up harming the model’s performance and usability. 
 
-In light of this problem, we decided to perform an ‘on-the-spot’ training of our linear model, in which we decided to train our model each time the user submitted the job and train it only on the relevant data that has been filtered using the user's input. For example, the user’s choice of American Airline and departing airport as BWI would filter the dataset for the specific airline and the departing airport.
+In light of this problem, we decided to perform an ‘on-the-spot’ training of our linear model, in which we train our model each time the user submits their flight's information, and train it only on the relevant data that has been filtered using the user's input. For example, the user’s choice of American Airlines and departing airport as BWI would filter the dataset to show only American Airlines flights from BWI.
 
 Then, the linear regression problem becomes much simpler, where we fit delay time in minutes against two numerical predictors: flight date and time of the flight. Flight date was converted to an integer from 1 to 365, and time of the flight was defined as from 1 to 2400.
 
-Delay Time = b_0 + b_1 * flight_date + b_2 * time_of_flight
+<img src="https://render.githubusercontent.com/render/math?math=Delay \: Time = b_{0} %2B (b_{1} * Flight \: Date) %2B (b_{2} * Time \: of \: Flight)">
 
-Model’s performance was qualitatively evaluated based on our comparison against previous historical data, and found to be reasonably sufficient for our project’s purposes. However, the detailed performance metric was difficult to acquire and a more specific measure could be implemented for future project ideas. Furthermore, the limitation of data storage for github student accounts reduced the amount of data we could access during training, which also impacted our performance. Overall, our approach to this estimation problem serves as an original prototype for a data-based numerical prediction of a real-world problem like flight delay prediction.
+The model’s performance was qualitatively evaluated based on our comparison against previous historical data, and found to be reasonably sufficient for our project’s purposes. However, the detailed performance metric was difficult to acquire and a more specific measure could be implemented for future project ideas. Furthermore, the limitation of data storage for Shiny student accounts reduced the amount of data we could access during training, which also impacted our performance. Overall, our approach to this estimation problem serves as an original prototype for a data-based numerical prediction of a real-world problem like flight delay prediction.
 
 ## Graphic UI Design
 
-Left Control Panel:
+### Left Control Panel:
 
 ![Left Control Panel 1](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig1.png)
 
-Users input the airline of their flight
-Users input the departing airport name. Users can easily type the name of the airport instead of trying to find one among 357 airports.
-Likewise, users can select the arrival airport.
-Users input their departure date by clicking the date on a visual calendar-style input.
+- The user inputs the airline of their flight
+- The user inputs the departing airport name. The user can easily type the name of the airport instead of trying to find one among 357 airports.
+- Likewise, the user can select the arrival airport.
+- The user inputs their departure date by clicking the date on a visual calendar-style input.
 
-Users type the time of the day in the specified format.
-Pressing the ‘Submit’ button will then perform training and prediction, as well as display of any available historical data.
+- The user types the time of the day in the specified format (24 hour time).
+- Pressing the ‘Submit’ button will then perform training and prediction, as well as display any available historical data.
 
 
-Right Display Panel:
+### Right Display Panel:
 
 
 ![Right Display Panel 1](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig2.png)
@@ -99,7 +104,7 @@ First plot on the right is the text display of how much the user’s flight will
 ![Right Display Panel 2](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig3.png)
 
 
-Second plot on the right is a text display of how many specific flights similar to the user’s choice were delayed or not. 
+Second plot on the right is a text display of how many specific flights similar to the user’s choice were delayed (by more than 10 minutes) or not. 
 
 ![Right Display Panel 3](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig4.png)
 
