@@ -76,7 +76,7 @@ Then, the linear regression problem becomes much simpler, where we fit delay tim
 
 <img src="https://render.githubusercontent.com/render/math?math=Delay \: Time = b_{0} %2B (b_{1} * Flight \: Date) %2B (b_{2} * Time \: of \: Flight)">
 
-The model’s performance was qualitatively evaluated based on our comparison against previous historical data, and found to be reasonably sufficient for our project’s purposes. However, the detailed performance metric was difficult to acquire and a more specific measure could be implemented for future project ideas. Furthermore, the limitation of data storage for Shiny student accounts reduced the amount of data we could access during training, which also impacted our performance. Overall, our approach to this estimation problem serves as an original prototype for a data-based numerical prediction of a real-world problem like flight delay prediction.
+The model’s performance was qualitatively evaluated based on our comparison against previous historical data, and found to be reasonably sufficient for our project’s purposes. However, the detailed performance metric was difficult to acquire and a more specific measure could be implemented for future project ideas. Furthermore, the limitation of data storage for Shiny student accounts reduced the amount of data we could access during training, which also impacted our performance. Overall, our approach to this estimation problem serves as an original prototype for a data-based numerical prediction of a real-world problem like flight delay.
 
 ## Graphic UI Design
 
