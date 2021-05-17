@@ -57,7 +57,7 @@ Model’s performance was qualitatively evaluated based on our comparison agains
 
 Left Control Panel:
 
-![Left Control Panel 1](Fig1.png)
+![Left Control Panel 1](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig1.png)
 
 Users input the airline of their flight
 Users input the departing airport name. Users can easily type the name of the airport instead of trying to find one among 357 airports.
@@ -71,22 +71,22 @@ Pressing the ‘Submit’ button will then perform training and prediction, as w
 Right Display Panel:
 
 
-![Right Display Panel 1](Fig2.png)
+![Right Display Panel 1](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig2.png)
 
 
 First plot on the right is the text display of how much the user’s flight will be delayed in minutes.
 
-![Right Display Panel 2](Fig3.png)
+![Right Display Panel 2](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig3.png)
 
 
 Second plot on the right is a text display of how many specific flights similar to the user’s choice were delayed or not. 
 
-![Right Display Panel 3](Fig4.png)
+![Right Display Panel 3](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig4.png)
 
 
 Third plot on the right depicts historical flight data for the specific airline and different departure dates.
 
-![Right Display Panel 4](Fig5.png)
+![Right Display Panel 4](https://github.com/akenet/flight_delay_predictor/blob/main/Figures/Fig5.png)
 
 Last plot on the right panel provides a visual aid to the geographic connection between two US airports. Geodesic line is also displayed to depict the flight’s physical route.
 
